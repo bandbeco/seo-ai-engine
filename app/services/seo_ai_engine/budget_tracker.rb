@@ -58,7 +58,7 @@ module SeoAiEngine
         daily_requests_today = tracking.serpapi_requests # Simplified: assumes monthly tracking
 
         # Allow 3 SerpAPI requests per day (90/month ÷ 30 days)
-        daily_requests_today < 3
+        daily_requests_today < SeoAiEngine.configuration.serpapi_daily_limit
       end
 
       def within_weekly_generation_limit?
