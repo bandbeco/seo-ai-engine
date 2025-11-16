@@ -1,0 +1,169 @@
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <div class="breadcrumbs text-sm mb-2">
+      <ul>
+        <li><%= link_to "Opportunities", admin_opportunities_path %></li>
+        <li><%= link_to "Published", admin_content_items_path %></li>
+        <li>View</li>
+      </ul>
+    </div>
+    <h1 class="text-3xl font-bold"><%= @content_item.title %></h1>
+    <div class="text-sm text-gray-500 mt-2">
+      Published <%= @content_item.published_at.strftime("%B %d, %Y at %I:%M %p") %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main content (2/3) -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- SEO metadata -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">SEO Metadata</h2>
+          <div class="bg-base-200 p-4 rounded-lg space-y-3">
+            <div>
+              <div class="text-sm font-semibold text-primary mb-1">Public URL</div>
+              <div class="text-sm font-mono bg-base-100 p-2 rounded">
+                /blog/<%= @content_item.slug %>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-primary mb-1">Meta Title</div>
+              <div><%= @content_item.meta_title || @content_item.title %></div>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-primary mb-1">Meta Description</div>
+              <div><%= @content_item.meta_description || "No meta description" %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Published content -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Published Content</h2>
+          <div class="prose max-w-none">
+            <%= simple_format(@content_item.body) %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar (1/3) -->
+    <div class="space-y-6">
+      <!-- Publication details -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Publication Details</h2>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="font-semibold">Status:</span>
+              <span class="badge badge-success ml-2">Published</span>
+            </div>
+            <div>
+              <span class="font-semibold">Slug:</span>
+              <span class="font-mono text-xs"><%= @content_item.slug %></span>
+            </div>
+            <div>
+              <span class="font-semibold">Author:</span>
+              <%= @content_item.author_credit %>
+            </div>
+            <div>
+              <span class="font-semibold">Published:</span>
+              <%= @content_item.published_at.strftime("%b %d, %Y") %>
+            </div>
+          </div>
+
+          <!-- Target keywords -->
+          <% if @content_item.target_keywords.present? && @content_item.target_keywords.any? %>
+            <div class="divider"></div>
+            <div>
+              <div class="font-semibold text-sm mb-2">Target Keywords</div>
+              <div class="flex flex-wrap gap-2">
+                <% @content_item.target_keywords.each do |keyword| %>
+                  <span class="badge badge-outline"><%= keyword %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Draft information -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Source Draft</h2>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="font-semibold">Quality Score:</span>
+              <% if @draft.quality_score.present? %>
+                <span class="badge badge-sm ml-2 <%=
+                  if @draft.quality_score >= 70
+                    'badge-success'
+                  elsif @draft.quality_score >= 50
+                    'badge-warning'
+                  else
+                    'badge-error'
+                  end
+                %>">
+                  <%= @draft.quality_score %>
+                </span>
+              <% else %>
+                <span class="text-gray-400">-</span>
+              <% end %>
+            </div>
+            <div>
+              <span class="font-semibold">Created:</span>
+              <%= @draft.created_at.strftime("%b %d, %Y") %>
+            </div>
+            <% if @draft.generation_cost_gbp.present? %>
+              <div>
+                <span class="font-semibold">Generation Cost:</span>
+                £<%= number_with_precision(@draft.generation_cost_gbp, precision: 2) %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Source opportunity -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Source Opportunity</h2>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="font-semibold">Keyword:</span>
+              <%= @opportunity.keyword %>
+            </div>
+            <div>
+              <span class="font-semibold">Score:</span>
+              <span class="badge badge-sm ml-2"><%= @opportunity.score %></span>
+            </div>
+            <div>
+              <span class="font-semibold">Type:</span>
+              <%= @opportunity.opportunity_type.humanize %>
+            </div>
+            <% if @opportunity.search_volume.present? %>
+              <div>
+                <span class="font-semibold">Search Volume:</span>
+                <%= number_with_delimiter(@opportunity.search_volume) %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance placeholder -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Performance</h2>
+          <div class="text-center py-4 text-gray-400 text-sm">
+            Performance tracking coming in User Story 3
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

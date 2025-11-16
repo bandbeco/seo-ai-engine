@@ -1,0 +1,116 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Content Drafts</h1>
+  </div>
+
+  <!-- Status filter -->
+  <div class="card bg-base-100 shadow-lg mb-6">
+    <div class="card-body">
+      <h2 class="card-title text-lg mb-4">Filter by Status</h2>
+      <%= form_with url: admin_content_drafts_path, method: :get, class: "flex gap-4" do |f| %>
+        <div class="form-control">
+          <%= f.select :status,
+              options_for_select(
+                [
+                  ["Pending Review", "pending_review"],
+                  ["Approved", "approved"],
+                  ["Rejected", "rejected"],
+                  ["Published", "published"]
+                ],
+                params[:status] || "pending_review"
+              ),
+              {},
+              class: "select select-bordered w-full" %>
+        </div>
+        <div class="form-control">
+          <%= f.submit "Filter", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Drafts table -->
+  <div class="card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Keyword</th>
+              <th>Quality Score</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @drafts.each do |draft| %>
+              <tr>
+                <!-- Title -->
+                <td class="font-semibold max-w-xs truncate">
+                  <%= link_to draft.title, admin_content_draft_path(draft), class: "link link-primary" %>
+                </td>
+
+                <!-- Keyword -->
+                <td><%= draft.content_brief.target_keyword %></td>
+
+                <!-- Quality Score -->
+                <td>
+                  <% if draft.quality_score.present? %>
+                    <% if draft.quality_score >= 70 %>
+                      <span class="badge badge-success gap-2">
+                        <%= draft.quality_score %>
+                      </span>
+                    <% elsif draft.quality_score >= 50 %>
+                      <span class="badge badge-warning gap-2">
+                        <%= draft.quality_score %>
+                      </span>
+                    <% else %>
+                      <span class="badge badge-error gap-2">
+                        <%= draft.quality_score %>
+                      </span>
+                    <% end %>
+                  <% else %>
+                    <span class="text-gray-400">-</span>
+                  <% end %>
+                </td>
+
+                <!-- Status -->
+                <td>
+                  <span class="badge <%=
+                    case draft.status
+                    when 'pending_review' then 'badge-info'
+                    when 'approved' then 'badge-success'
+                    when 'rejected' then 'badge-error'
+                    when 'published' then 'badge-success'
+                    end
+                  %>">
+                    <%= draft.status.humanize %>
+                  </span>
+                </td>
+
+                <!-- Created date -->
+                <td class="text-sm">
+                  <%= draft.created_at.strftime("%b %d, %Y") %>
+                </td>
+
+                <!-- Actions -->
+                <td>
+                  <%= link_to "Review", admin_content_draft_path(draft), class: "btn btn-sm btn-primary" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @drafts.empty? %>
+          <div class="text-center py-8 text-gray-500">
+            <p class="text-lg">No drafts found with status: <%= params[:status]&.humanize || "Pending Review" %></p>
+            <p class="text-sm mt-2">Generate content from opportunities to create drafts.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html class="h-full bg-base-100 text-base-content" data-theme="light">
+<head>
+  <title><%= content_for(:title) || "AI SEO - Afida Admin" %></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= yield :head %>
+
+  <%= vite_client_tag if Rails.env.development? %>
+  <%= vite_javascript_tag "application" %>
+  <%= vite_stylesheet_tag "application" %>
+</head>
+<body class="h-full">
+  <div class="min-h-screen bg-base-100">
+    <!-- Simple admin header -->
+    <div class="navbar bg-base-200 shadow-sm">
+      <div class="flex-1">
+        <%= link_to "AI SEO Engine", admin_opportunities_path, class: "btn btn-ghost text-xl" %>
+      </div>
+      <div class="flex-none">
+        <ul class="menu menu-horizontal px-1">
+          <li><%= link_to "Opportunities", admin_opportunities_path %></li>
+          <li><%= link_to "Drafts", admin_content_drafts_path %></li>
+          <li><%= link_to "Published", admin_content_items_path %></li>
+          <li><%= link_to "Performance", admin_performance_path %></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="container mx-auto px-4 py-8">
+      <%= yield %>
+    </div>
+  </div>
+</body>
+</html>

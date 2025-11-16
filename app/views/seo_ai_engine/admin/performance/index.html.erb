@@ -1,0 +1,242 @@
+<% content_for :title, "Performance Dashboard - AI SEO Engine" %>
+
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold">Performance Dashboard</h1>
+      <p class="text-base-content/70 mt-1">Track content performance and ROI vs traditional agency costs</p>
+    </div>
+    <div class="text-sm text-base-content/60">
+      Last 4 weeks of data
+    </div>
+  </div>
+
+  <!-- ROI Overview Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <!-- Total Articles -->
+    <div class="stat bg-base-200 rounded-lg shadow">
+      <div class="stat-title">Total Articles</div>
+      <div class="stat-value text-primary"><%= @total_articles %></div>
+      <div class="stat-desc">Published content</div>
+    </div>
+
+    <!-- Total Traffic -->
+    <div class="stat bg-base-200 rounded-lg shadow">
+      <div class="stat-title">Total Impressions</div>
+      <div class="stat-value text-secondary"><%= number_with_delimiter(@total_impressions) %></div>
+      <div class="stat-desc"><%= number_with_delimiter(@total_clicks) %> clicks</div>
+    </div>
+
+    <!-- Traffic Value -->
+    <div class="stat bg-base-200 rounded-lg shadow">
+      <div class="stat-title">Traffic Value</div>
+      <div class="stat-value text-accent">£<%= number_with_precision(@traffic_value, precision: 2) %></div>
+      <div class="stat-desc">@ £2.50 per click</div>
+    </div>
+
+    <!-- Monthly Savings -->
+    <div class="stat bg-base-200 rounded-lg shadow">
+      <div class="stat-title">Monthly Savings</div>
+      <div class="stat-value <%= @monthly_savings > 0 ? 'text-success' : 'text-error' %>">
+        £<%= number_with_precision(@monthly_savings, precision: 2) %>
+      </div>
+      <div class="stat-desc">vs £600 agency</div>
+    </div>
+  </div>
+
+  <!-- Budget Status Alert -->
+  <% if @budget_status != :ok %>
+    <div class="alert <%= @budget_status == :exceeded ? 'alert-error' : 'alert-warning' %>">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <div>
+        <h3 class="font-bold">Budget <%= @budget_status == :exceeded ? 'Exceeded' : 'Warning' %></h3>
+        <div class="text-sm">
+          Current spend: £<%= number_with_precision(@current_budget.total_cost_gbp, precision: 2) %>
+          / Target: £<%= BudgetTracking::BUDGET_TARGET_GBP %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Budget Tracker Section -->
+  <div class="card bg-base-200 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-2xl mb-4">Budget Tracker</h2>
+
+      <!-- Current Month Budget -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2">
+          <span class="font-semibold">Current Month (<%= @current_budget.month.strftime("%B %Y") %>)</span>
+          <span class="text-lg font-bold">
+            £<%= number_with_precision(@current_budget.total_cost_gbp, precision: 2) %>
+            / £<%= BudgetTracking::BUDGET_TARGET_GBP %>
+          </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <progress
+          class="progress <%= budget_progress_color(@budget_status) %> w-full"
+          value="<%= @current_budget.budget_percentage %>"
+          max="100"
+        ></progress>
+
+        <div class="text-sm text-base-content/70 mt-2">
+          <%= number_with_precision(@current_budget.budget_percentage, precision: 1) %>% of budget used
+        </div>
+      </div>
+
+      <!-- Cost Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="stat bg-base-100 rounded-lg">
+          <div class="stat-title">LLM Costs</div>
+          <div class="stat-value text-sm">£<%= number_with_precision(@current_budget.llm_cost_gbp || 0, precision: 2) %></div>
+          <div class="stat-desc"><%= @current_budget.llm_requests %> requests</div>
+        </div>
+
+        <div class="stat bg-base-100 rounded-lg">
+          <div class="stat-title">SerpAPI Costs</div>
+          <div class="stat-value text-sm">£<%= number_with_precision(@current_budget.serpapi_cost_gbp || 0, precision: 2) %></div>
+          <div class="stat-desc"><%= @current_budget.serpapi_requests %> searches</div>
+        </div>
+
+        <div class="stat bg-base-100 rounded-lg">
+          <div class="stat-title">Avg Cost/Article</div>
+          <div class="stat-value text-sm">£<%= number_with_precision(@current_budget.avg_cost_per_piece || 0, precision: 2) %></div>
+          <div class="stat-desc"><%= @current_budget.content_pieces_generated %> pieces</div>
+        </div>
+      </div>
+
+      <!-- Budget History Chart (simplified) -->
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Total Cost</th>
+              <th>LLM</th>
+              <th>SerpAPI</th>
+              <th>Articles</th>
+              <th>Avg/Article</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @budget_history.each do |history| %>
+              <tr>
+                <td><%= history.month.strftime("%b %Y") %></td>
+                <td class="font-semibold">£<%= number_with_precision(history.total_cost_gbp, precision: 2) %></td>
+                <td>£<%= number_with_precision(history.llm_cost_gbp || 0, precision: 2) %></td>
+                <td>£<%= number_with_precision(history.serpapi_cost_gbp || 0, precision: 2) %></td>
+                <td><%= history.content_pieces_generated %></td>
+                <td>£<%= number_with_precision(history.avg_cost_per_piece || 0, precision: 2) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Performance Table -->
+  <div class="card bg-base-200 shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-2xl mb-4">Content Performance</h2>
+
+      <% if @content_performance.empty? %>
+        <div class="alert">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>No published content yet. Run the PerformanceTrackingJob to start tracking.</span>
+        </div>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="table table-zebra">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Weeks Live</th>
+                <th>Impressions</th>
+                <th>Clicks</th>
+                <th>CTR</th>
+                <th>Traffic Value</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @content_performance.each do |perf| %>
+                <tr>
+                  <td>
+                    <div class="font-semibold"><%= perf[:item].title %></div>
+                    <div class="text-sm text-base-content/70"><%= perf[:item].slug %></div>
+                  </td>
+                  <td><%= perf[:weeks_live] %> weeks</td>
+                  <td><%= number_with_delimiter(perf[:impressions]) %></td>
+                  <td><%= number_with_delimiter(perf[:clicks]) %></td>
+                  <td><%= number_with_precision(perf[:ctr], precision: 2) %>%</td>
+                  <td>£<%= number_with_precision(perf[:traffic_value], precision: 2) %></td>
+                  <td>
+                    <% if perf[:trends] %>
+                      <div class="text-sm">
+                        <div class="<%= trend_color(perf[:trends][:impressions]) %>">
+                          Imp: <%= format_trend(perf[:trends][:impressions]) %>
+                        </div>
+                        <div class="<%= trend_color(perf[:trends][:clicks]) %>">
+                          Clicks: <%= format_trend(perf[:trends][:clicks]) %>
+                        </div>
+                      </div>
+                    <% else %>
+                      <span class="text-base-content/50">New</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- ROI Summary -->
+  <div class="card bg-primary text-primary-content shadow-lg">
+    <div class="card-body">
+      <h2 class="card-title text-2xl">ROI Summary</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+        <div>
+          <div class="text-sm opacity-70">Traditional Agency Cost</div>
+          <div class="text-3xl font-bold">£600/month</div>
+        </div>
+        <div>
+          <div class="text-sm opacity-70">AI Engine Cost</div>
+          <div class="text-3xl font-bold">£<%= number_with_precision(@monthly_cost, precision: 2) %>/month</div>
+        </div>
+        <div>
+          <div class="text-sm opacity-70">Monthly Savings</div>
+          <div class="text-3xl font-bold <%= @monthly_savings > 0 ? 'text-success' : 'text-error' %>">
+            £<%= number_with_precision(@monthly_savings, precision: 2) %>
+          </div>
+          <div class="text-sm opacity-70 mt-1">
+            <%= number_with_precision((@monthly_savings / 600.0 * 100), precision: 1) %>% cost reduction
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduling Info -->
+  <div class="alert alert-info">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <div>
+      <h3 class="font-bold">Performance Tracking Schedule</h3>
+      <div class="text-sm">
+        Automated weekly tracking runs every Sunday at 3am. To run manually:
+        <code class="bg-base-100 px-2 py-1 rounded">SeoAiEngine::PerformanceTrackingJob.perform_now</code>
+      </div>
+    </div>
+  </div>
+</div>

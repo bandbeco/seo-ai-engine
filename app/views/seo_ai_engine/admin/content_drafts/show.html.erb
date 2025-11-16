@@ -1,0 +1,224 @@
+<div class="container mx-auto px-4 py-8">
+  <!-- Header with actions -->
+  <div class="flex justify-between items-start mb-6">
+    <div>
+      <div class="breadcrumbs text-sm mb-2">
+        <ul>
+          <li><%= link_to "Opportunities", admin_opportunities_path %></li>
+          <li><%= link_to "Drafts", admin_content_drafts_path %></li>
+          <li>Review</li>
+        </ul>
+      </div>
+      <h1 class="text-3xl font-bold"><%= @draft.title %></h1>
+    </div>
+
+    <!-- Action buttons -->
+    <% if @draft.pending_review? %>
+      <div class="flex gap-2">
+        <%= button_to "Approve & Publish",
+            approve_admin_content_draft_path(@draft),
+            method: :post,
+            class: "btn btn-success",
+            data: { turbo_confirm: "Are you sure you want to approve and publish this content?" } %>
+        <%= button_to "Reject",
+            reject_admin_content_draft_path(@draft),
+            method: :post,
+            class: "btn btn-error",
+            data: { turbo_confirm: "Are you sure you want to reject this draft?" } %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main content (2/3) -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Brief summary -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Content Brief</h2>
+          <div class="space-y-2">
+            <div>
+              <span class="font-semibold">Target Keyword:</span>
+              <span class="badge badge-primary ml-2"><%= @brief.target_keyword %></span>
+            </div>
+            <div>
+              <span class="font-semibold">Suggested Title:</span>
+              <%= @brief.suggested_structure["title"] %>
+            </div>
+            <% if @brief.search_intent.present? %>
+              <div>
+                <span class="font-semibold">Search Intent:</span>
+                <%= @brief.search_intent %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content preview -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Content Preview</h2>
+
+          <!-- Meta information -->
+          <div class="bg-base-200 p-4 rounded-lg mb-4">
+            <div class="text-sm font-semibold text-primary mb-1">Meta Title</div>
+            <div class="mb-3"><%= @draft.meta_title || @draft.title %></div>
+
+            <div class="text-sm font-semibold text-primary mb-1">Meta Description</div>
+            <div><%= @draft.meta_description || "No meta description provided" %></div>
+          </div>
+
+          <!-- Body content with markdown rendering -->
+          <div class="prose max-w-none">
+            <%= simple_format(@draft.body) %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar (1/3) -->
+    <div class="space-y-6">
+      <!-- Quality score -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Quality Score</h2>
+          <div class="text-center py-4">
+            <% if @draft.quality_score.present? %>
+              <div class="radial-progress text-5xl font-bold <%=
+                if @draft.quality_score >= 70
+                  'text-success'
+                elsif @draft.quality_score >= 50
+                  'text-warning'
+                else
+                  'text-error'
+                end
+              %>"
+                   style="--value:<%= @draft.quality_score %>; --size:10rem; --thickness:1rem;">
+                <%= @draft.quality_score %>
+              </div>
+              <div class="text-sm text-gray-500 mt-2">
+                Reviewed by <%= @draft.reviewer_model || "AI" %>
+              </div>
+            <% else %>
+              <div class="text-gray-400">Not reviewed yet</div>
+            <% end %>
+          </div>
+
+          <!-- Review notes -->
+          <% if @draft.review_notes.present? %>
+            <div class="divider"></div>
+            <div class="space-y-3">
+              <% if @draft.review_notes["strengths"].present? %>
+                <div>
+                  <div class="text-sm font-semibold text-success mb-1">Strengths</div>
+                  <ul class="text-sm list-disc list-inside space-y-1">
+                    <% @draft.review_notes["strengths"].each do |strength| %>
+                      <li><%= strength %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+
+              <% if @draft.review_notes["improvements"].present? %>
+                <div>
+                  <div class="text-sm font-semibold text-warning mb-1">Suggested Improvements</div>
+                  <ul class="text-sm list-disc list-inside space-y-1">
+                    <% @draft.review_notes["improvements"].each do |improvement| %>
+                      <li><%= improvement %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+
+              <% if @draft.review_notes["seo_score"].present? %>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span class="font-semibold">SEO Score:</span>
+                    <span class="badge badge-sm ml-1"><%= @draft.review_notes["seo_score"] %></span>
+                  </div>
+                  <% if @draft.review_notes["readability_score"].present? %>
+                    <div>
+                      <span class="font-semibold">Readability:</span>
+                      <span class="badge badge-sm ml-1"><%= @draft.review_notes["readability_score"] %></span>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Details</h2>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="font-semibold">Status:</span>
+              <span class="badge badge-sm ml-2 <%=
+                case @draft.status
+                when 'pending_review' then 'badge-info'
+                when 'approved' then 'badge-success'
+                when 'rejected' then 'badge-error'
+                when 'published' then 'badge-success'
+                end
+              %>">
+                <%= @draft.status.humanize %>
+              </span>
+            </div>
+            <div>
+              <span class="font-semibold">Content Type:</span>
+              <%= @draft.content_type.humanize %>
+            </div>
+            <div>
+              <span class="font-semibold">Created:</span>
+              <%= @draft.created_at.strftime("%b %d, %Y at %I:%M %p") %>
+            </div>
+            <% if @draft.generation_cost_gbp.present? %>
+              <div>
+                <span class="font-semibold">Generation Cost:</span>
+                £<%= number_with_precision(@draft.generation_cost_gbp, precision: 2) %>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Target keywords -->
+          <% if @draft.target_keywords.present? && @draft.target_keywords.any? %>
+            <div class="divider"></div>
+            <div>
+              <div class="font-semibold text-sm mb-2">Target Keywords</div>
+              <div class="flex flex-wrap gap-2">
+                <% @draft.target_keywords.each do |keyword| %>
+                  <span class="badge badge-outline"><%= keyword %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Related opportunity -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title">Source Opportunity</h2>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="font-semibold">Keyword:</span>
+              <%= @opportunity.keyword %>
+            </div>
+            <div>
+              <span class="font-semibold">Score:</span>
+              <span class="badge badge-sm ml-2"><%= @opportunity.score %></span>
+            </div>
+            <div>
+              <span class="font-semibold">Type:</span>
+              <%= @opportunity.opportunity_type.humanize %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

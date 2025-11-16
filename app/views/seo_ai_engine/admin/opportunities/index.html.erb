@@ -1,0 +1,177 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">SEO Opportunities</h1>
+    <%= button_to "Run Discovery Now", run_discovery_admin_opportunities_path, method: :post, class: "btn btn-primary", form: { data: { turbo_confirm: "This will fetch new opportunities from Google Search Console and SerpAPI. Continue?" } } %>
+  </div>
+
+  <!-- Filters -->
+  <div class="card bg-base-100 shadow-lg mb-6">
+    <div class="card-body">
+      <h2 class="card-title text-lg mb-4">Filters</h2>
+      <%= form_with url: admin_opportunities_path, method: :get, class: "form-control" do |f| %>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Status filter -->
+          <div class="form-control">
+            <%= f.label :status, class: "label" do %>
+              <span class="label-text">Status</span>
+            <% end %>
+            <%= f.select :status,
+                options_for_select(
+                  [
+                    ["All Statuses", ""],
+                    ["Pending", "pending"],
+                    ["In Progress", "in_progress"],
+                    ["Completed", "completed"],
+                    ["Dismissed", "dismissed"]
+                  ],
+                  params[:status]
+                ),
+                {},
+                class: "select select-bordered w-full" %>
+          </div>
+
+          <!-- Min score filter -->
+          <div class="form-control">
+            <%= f.label :min_score, class: "label" do %>
+              <span class="label-text">Minimum Score</span>
+            <% end %>
+            <%= f.number_field :min_score,
+                value: params[:min_score],
+                placeholder: "0-100",
+                min: 0,
+                max: 100,
+                class: "input input-bordered w-full" %>
+          </div>
+
+          <!-- Filter buttons -->
+          <div class="form-control justify-end">
+            <%= f.submit "Apply Filters", class: "btn btn-primary" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Opportunities table -->
+  <div class="card bg-base-100 shadow-lg">
+    <div class="card-body">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Keyword</th>
+              <th>Type</th>
+              <th>Search Volume</th>
+              <th>Competition</th>
+              <th>Status</th>
+              <th>Discovered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @opportunities.each do |opportunity| %>
+              <tr>
+                <!-- Score with badge -->
+                <td>
+                  <% if opportunity.score >= 70 %>
+                    <span class="badge badge-success gap-2">
+                      <%= opportunity.score %>
+                    </span>
+                  <% elsif opportunity.score >= 50 %>
+                    <span class="badge badge-warning gap-2">
+                      <%= opportunity.score %>
+                    </span>
+                  <% else %>
+                    <span class="badge badge-neutral gap-2">
+                      <%= opportunity.score %>
+                    </span>
+                  <% end %>
+                </td>
+
+                <!-- Keyword -->
+                <td class="font-semibold"><%= opportunity.keyword %></td>
+
+                <!-- Type -->
+                <td>
+                  <span class="badge badge-outline">
+                    <%= opportunity.opportunity_type.humanize %>
+                  </span>
+                </td>
+
+                <!-- Search Volume -->
+                <td><%= number_with_delimiter(opportunity.search_volume || 0) %></td>
+
+                <!-- Competition -->
+                <td>
+                  <% if opportunity.competition_difficulty.present? %>
+                    <span class="badge <%=
+                      case opportunity.competition_difficulty
+                      when 'low' then 'badge-success'
+                      when 'medium' then 'badge-warning'
+                      when 'high' then 'badge-error'
+                      end
+                    %>">
+                      <%= opportunity.competition_difficulty.titleize %>
+                    </span>
+                  <% else %>
+                    <span class="text-gray-400">-</span>
+                  <% end %>
+                </td>
+
+                <!-- Status -->
+                <td>
+                  <span class="badge <%=
+                    case opportunity.status
+                    when 'pending' then 'badge-info'
+                    when 'in_progress' then 'badge-warning'
+                    when 'completed' then 'badge-success'
+                    when 'dismissed' then 'badge-neutral'
+                    end
+                  %>">
+                    <%= opportunity.status.humanize %>
+                  </span>
+                </td>
+
+                <!-- Discovered date -->
+                <td class="text-sm">
+                  <%= opportunity.discovered_at.strftime("%b %d, %Y") %>
+                </td>
+
+                <!-- Actions -->
+                <td>
+                  <div class="flex gap-2">
+                    <% if opportunity.pending? %>
+                      <%= button_to "Generate Content",
+                          generate_content_admin_opportunity_path(opportunity),
+                          method: :post,
+                          class: "btn btn-sm btn-primary" %>
+                      <%= button_to "Dismiss",
+                          dismiss_admin_opportunity_path(opportunity),
+                          method: :post,
+                          class: "btn btn-sm btn-ghost",
+                          data: { turbo_confirm: "Are you sure you want to dismiss this opportunity?" } %>
+                    <% elsif opportunity.in_progress? %>
+                      <span class="text-sm text-warning">Generating...</span>
+                    <% elsif opportunity.completed? %>
+                      <span class="text-sm text-success">Content ready</span>
+                    <% else %>
+                      <span class="text-gray-400 text-sm">Dismissed</span>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @opportunities.empty? %>
+          <div class="text-center py-8 text-gray-500">
+            <p class="text-lg">No opportunities found matching your filters.</p>
+            <p class="text-sm mt-2">Try adjusting your search criteria or run the discovery job.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Published Content</h1>
+  </div>
+
+  <!-- Content items grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @content_items.each do |item| %>
+      <div class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+        <div class="card-body">
+          <!-- Status badge -->
+          <div class="flex justify-between items-start mb-2">
+            <span class="badge badge-success">Published</span>
+            <span class="text-xs text-gray-500">
+              <%= item.published_at.strftime("%b %d, %Y") %>
+            </span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="card-title text-lg line-clamp-2 mb-2">
+            <%= link_to item.title, admin_content_item_path(item), class: "link link-primary" %>
+          </h2>
+
+          <!-- Meta description preview -->
+          <% if item.meta_description.present? %>
+            <p class="text-sm text-gray-600 line-clamp-3 mb-4">
+              <%= item.meta_description %>
+            </p>
+          <% end %>
+
+          <!-- Keywords -->
+          <% if item.target_keywords.present? && item.target_keywords.any? %>
+            <div class="flex flex-wrap gap-1 mb-4">
+              <% item.target_keywords.first(3).each do |keyword| %>
+                <span class="badge badge-sm badge-outline"><%= keyword %></span>
+              <% end %>
+              <% if item.target_keywords.size > 3 %>
+                <span class="badge badge-sm badge-ghost">+<%= item.target_keywords.size - 3 %></span>
+              <% end %>
+            </div>
+          <% end %>
+
+          <!-- Actions -->
+          <div class="card-actions justify-end mt-4">
+            <%= link_to "View Details", admin_content_item_path(item), class: "btn btn-sm btn-primary" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @content_items.empty? %>
+    <div class="card bg-base-100 shadow-lg">
+      <div class="card-body text-center py-12">
+        <div class="text-gray-500">
+          <p class="text-lg font-semibold mb-2">No published content yet</p>
+          <p class="text-sm">Approve drafts to publish content and see them here.</p>
+          <div class="mt-6">
+            <%= link_to "View Pending Drafts", admin_content_drafts_path(status: "pending_review"), class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
