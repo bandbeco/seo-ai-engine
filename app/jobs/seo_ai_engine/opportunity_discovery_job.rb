@@ -43,8 +43,26 @@ module SeoAiEngine
     private
 
     def fetch_keywords_from_gsc
-      # TODO: Implement actual GSC integration when OAuth credentials are available
-      # For now, return mock keyword data for testing
+      # Try to fetch real data from Google Search Console
+      begin
+        gsc_client = GscClient.new
+        if gsc_client.send(:authorize).present?
+          # Real GSC data available
+          Rails.logger.info "[OpportunityDiscoveryJob] Fetching real data from Google Search Console"
+          return gsc_client.search_analytics(
+            start_date: 28.days.ago.to_date,
+            end_date: Date.today,
+            dimensions: ["query"],
+            min_impressions: 10,
+            exclude_branded: true
+          )
+        end
+      rescue GscClient::AuthenticationError, GscClient::APIError => e
+        Rails.logger.warn "[OpportunityDiscoveryJob] GSC error, falling back to mock data: #{e.message}"
+      end
+
+      # Fallback to mock data if OAuth not configured or API fails
+      Rails.logger.info "[OpportunityDiscoveryJob] Using mock data (configure OAuth for real data)"
       SAMPLE_KEYWORDS.map do |keyword|
         {
           keyword: keyword,
@@ -54,7 +72,6 @@ module SeoAiEngine
         }
       end
     end
-
     def analyze_and_save_opportunity(keyword_data)
       keyword = keyword_data[:keyword]
 

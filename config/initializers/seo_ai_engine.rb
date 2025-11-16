@@ -10,9 +10,13 @@ SeoAiEngine.configure do |config|
 
   # API Keys (from Rails credentials)
   config.anthropic_api_key = Rails.application.credentials.dig(:seo_ai_engine, :anthropic_api_key)
+
+  # Google Search Console (Service Account recommended, OAuth fallback)
+  config.google_service_account = Rails.application.credentials.dig(:seo_ai_engine, :google_service_account)
   config.google_oauth_client_id = Rails.application.credentials.dig(:seo_ai_engine, :google_oauth_client_id)
   config.google_oauth_client_secret = Rails.application.credentials.dig(:seo_ai_engine, :google_oauth_client_secret)
   config.google_oauth_refresh_token = Rails.application.credentials.dig(:seo_ai_engine, :google_oauth_refresh_token)
+
   config.serpapi_key = Rails.application.credentials.dig(:seo_ai_engine, :serpapi_key)
 
   # Rate Limits

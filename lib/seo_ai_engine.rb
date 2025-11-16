@@ -17,6 +17,7 @@ module SeoAiEngine
                   :writer_model,
                   :reviewer_model,
                   :anthropic_api_key,
+                  :google_service_account,
                   :google_oauth_client_id,
                   :google_oauth_client_secret,
                   :google_oauth_refresh_token,
