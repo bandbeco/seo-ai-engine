@@ -59,23 +59,12 @@ module SeoAiEngine
     def authorize
       config = SeoAiEngine.configuration
 
-      # Try service account first (recommended)
+      # Service account authentication
       if config.google_service_account.present?
         Rails.logger.info "[GscClient] Using service account authentication"
         return Google::Auth::ServiceAccountCredentials.make_creds(
           json_key_io: StringIO.new(config.google_service_account.to_json),
           scope: [ "https://www.googleapis.com/auth/webmasters.readonly" ]
-        )
-      end
-
-      # Fallback to OAuth if configured (legacy)
-      if config.google_oauth_refresh_token.present?
-        Rails.logger.info "[GscClient] Using OAuth refresh token authentication"
-        return Google::Auth::UserRefreshCredentials.new(
-          client_id: config.google_oauth_client_id,
-          client_secret: config.google_oauth_client_secret,
-          scope: [ "https://www.googleapis.com/auth/webmasters.readonly" ],
-          refresh_token: config.google_oauth_refresh_token
         )
       end
 
