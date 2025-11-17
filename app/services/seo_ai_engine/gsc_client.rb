@@ -26,7 +26,7 @@ module SeoAiEngine
       
       results = (response.rows || []).map do |row|
         {
-          query: row.keys.first,
+          query: row.keys[0],
           impressions: row.impressions.to_i,
           clicks: row.clicks.to_i,
           ctr: row.ctr.to_f,
