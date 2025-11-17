@@ -26,8 +26,8 @@ module SeoAiEngine
       # Step 1: Fetch keywords from Google Search Console
       keywords = fetch_keywords_from_gsc
 
-      # Step 2: Analyze each keyword with SerpAPI and score (limit to 3/day)
-      keywords.first(3).each do |keyword_data|
+      # Step 2: Analyze each keyword with SerpAPI and score
+      keywords.each do |keyword_data|
         analyze_and_save_opportunity(keyword_data)
       end
 
@@ -72,6 +72,7 @@ module SeoAiEngine
         }
       end
     end
+
     def analyze_and_save_opportunity(keyword_data)
       keyword = keyword_data[:keyword]
 
