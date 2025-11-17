@@ -16,7 +16,7 @@ module SeoAiEngine
         return
       end
 
-      # Step 1: Fetch keywords from Google Search Console
+      # Step 1: Fetch queries from Google Search Console
       search_queries_data = fetch_queries_from_gsc
 
       # Step 2: Analyze each query with SerpAPI and score
@@ -77,8 +77,8 @@ module SeoAiEngine
       save_opportunity(query, search_query_data, serp_data, score)
 
     rescue SerpClient::APIError => e
-      Rails.logger.error "[OpportunityDiscoveryJob] SerpAPI error for '#{keyword}': #{e.message}"
-      # Continue with next keyword
+      Rails.logger.error "[OpportunityDiscoveryJob] SerpAPI error for '#{query}': #{e.message}"
+      # Continue with next query
     end
 
     def fetch_serp_data(query)
@@ -94,7 +94,7 @@ module SeoAiEngine
       search_volume = search_query_data[:impressions] || 0
       competition_difficulty = serp_data[:competition_difficulty]
       product_relevance = calculate_product_relevance(query)
-      content_gap_score = calculate_content_gap(search_query_data[:position])
+      content_gap_score = calculate_content_gap(search_query_data)
 
       {
         search_volume: search_volume,
@@ -110,7 +110,7 @@ module SeoAiEngine
     end
 
     def calculate_product_relevance(query)
-      # Simple heuristic: check if keyword contains product-related terms
+      # Simple heuristic: check if query contains product-related terms
       product_terms = [
         # Core product types from catalog
         "cup", "cups",
@@ -175,11 +175,12 @@ module SeoAiEngine
       relevance
     end
 
-    def calculate_content_gap(keyword_data)
+    def calculate_content_gap(search_query_data)
+      puts "🚀🚀🚀 Search query data: #{search_query_data}"
       # Content gap: how well are we ranking vs potential?
       # Higher gap = better opportunity
       # If we're not ranking (no position data), gap is high
-      position = keyword_data[:position] || 50
+      position = search_query_data[:position] || 50
       gap = [ 1.0 - (position / 50.0), 0.0 ].max
       gap
     end
@@ -203,7 +204,7 @@ module SeoAiEngine
         competition_difficulty: serp_data[:competition_difficulty],
         score: score,
         opportunity_type: opportunity_type,
-        current_position: search_query_data[:position],
+        current_position: search_query_data[:position].to_i,
         metadata: {
           impressions: search_query_data[:impressions],
           clicks: search_query_data[:clicks],

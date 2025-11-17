@@ -23,7 +23,7 @@ module SeoAiEngine
     }, validate: true
 
     # Validations
-    validates :keyword, presence: true, uniqueness: true
+    validates :query, presence: true, uniqueness: true
     validates :opportunity_type, presence: true
     validates :score, presence: true, numericality: {
       greater_than_or_equal_to: 0,

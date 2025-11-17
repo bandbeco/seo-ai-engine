@@ -27,7 +27,7 @@ module SeoAiEngine
         ContentGenerationJob.perform_later(@opportunity.id)
 
         redirect_to admin_opportunities_path,
-          notice: "Content generation started for '#{@opportunity.keyword}'. Check drafts soon."
+          notice: "Content generation started for '#{@opportunity.query}'. Check drafts soon."
       rescue StandardError => e
         redirect_to admin_opportunities_path,
           alert: "Failed to start content generation: #{e.message}"
