@@ -24,11 +24,11 @@ module SeoAiEngine
       end
 
       # Step 1: Fetch keywords from Google Search Console
-      keywords = fetch_keywords_from_gsc
+      search_queries_data = fetch_queries_from_gsc
 
-      # Step 2: Analyze each keyword with SerpAPI and score
-      keywords.each do |keyword_data|
-        analyze_and_save_opportunity(keyword_data)
+      # Step 2: Analyze each query with SerpAPI and score
+      search_queries_data.each do |search_query_data|
+        analyze_and_save_opportunity(search_query_data)
       end
 
       Rails.logger.info "[OpportunityDiscoveryJob] Completed opportunity discovery"
@@ -42,7 +42,7 @@ module SeoAiEngine
 
     private
 
-    def fetch_keywords_from_gsc
+    def fetch_queries_from_gsc
       # Try to fetch real data from Google Search Console
       begin
         gsc_client = GscClient.new
@@ -73,15 +73,15 @@ module SeoAiEngine
       end
     end
 
-    def analyze_and_save_opportunity(keyword_data)
-      keyword = keyword_data[:keyword]
+    def analyze_and_save_opportunity(search_query_data)
+      query = search_query_data["query"]
 
       # Step 2A: Get SERP analysis data
-      serp_data = fetch_serp_data(keyword)
+      serp_data = fetch_serp_data(query)
       return unless serp_data
 
       # Step 2B: Calculate opportunity score
-      score_data = build_score_data(keyword_data, serp_data)
+      score_data = build_score_data(search_query_data, serp_data)
       score = calculate_score(score_data)
 
       # Step 2C: Only save if score meets threshold
@@ -103,12 +103,18 @@ module SeoAiEngine
       nil
     end
 
-    def build_score_data(keyword_data, serp_data)
+    def build_score_data(search_query_data, serp_data)
+      query = search_query_data["query"]
+      search_volume = search_query_data["impressions"] || 0
+      competition_difficulty = serp_data["competition_difficulty"]
+      product_relevance = calculate_product_relevance(query)
+      content_gap_score = calculate_content_gap(serp_data["position"])
+
       {
-        search_volume: serp_data[:search_volume] || 0,
-        competition_difficulty: serp_data[:competition_difficulty],
-        product_relevance: calculate_product_relevance(keyword_data[:keyword]),
-        content_gap_score: calculate_content_gap(keyword_data)
+        search_volume: search_volume,
+        competition_difficulty: competition_difficulty,
+        product_relevance: product_relevance,
+        content_gap_score: content_gap_score
       }
     end
 
@@ -134,14 +140,14 @@ module SeoAiEngine
       gap
     end
 
-    def save_opportunity(keyword, keyword_data, serp_data, score)
+    def save_opportunity(query, search_query_data, serp_data, score)
       # Find or initialize opportunity
-      opportunity = Opportunity.find_or_initialize_by(keyword: keyword)
+      opportunity = Opportunity.find_or_initialize_by(query: query)
 
       # Determine opportunity type
       opportunity_type = if opportunity.new_record?
                           "new_content"
-      elsif keyword_data[:position] && keyword_data[:position] <= 20
+      elsif serp_data["position"] && serp_data["position"] <= 20
                           "quick_win"
       else
                           "optimize_existing"
