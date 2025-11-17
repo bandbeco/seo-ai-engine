@@ -24,20 +24,27 @@ module SeoAiEngine
 
       response = @service.query_search_analytics(site_url, request)
       
+      # Transform response to our format
+      # Google API returns rows with keys array containing dimension values
       results = (response.rows || []).map do |row|
+        # For "query" dimension, keys[0] contains the actual search query
+        query_text = row.keys&.first
+        next if query_text.blank?  # Skip rows with no query
+        
         {
-          query: row.keys[0],
+          query: query_text,
           impressions: row.impressions.to_i,
           clicks: row.clicks.to_i,
           ctr: row.ctr.to_f,
           position: row.position.to_f
         }
-      end
+      end.compact  # Remove nil entries
 
       # Apply filters
       results = results.select { |r| r[:impressions] >= min_impressions } if min_impressions
       results = results.reject { |r| r[:query].downcase.include?("afida") } if exclude_branded
 
+      Rails.logger.info "[GscClient] Found #{results.count} keywords from Search Console"
       results
     rescue Google::Apis::AuthorizationError => e
       Rails.logger.error "[GscClient] Authorization failed: #{e.message}"
