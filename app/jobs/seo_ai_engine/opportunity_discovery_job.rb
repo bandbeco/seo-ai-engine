@@ -5,13 +5,6 @@ module SeoAiEngine
     # Minimum score threshold to save opportunity
     MIN_SCORE_THRESHOLD = 30
 
-    # Sample keywords to discover opportunities from (mock data)
-    SAMPLE_KEYWORDS = [
-      "eco-friendly paper cups",
-      "biodegradable food containers",
-      "compostable coffee cups"
-    ].freeze
-
     def perform
       Rails.logger.info "[OpportunityDiscoveryJob] Starting opportunity discovery"
 
@@ -62,23 +55,14 @@ module SeoAiEngine
       end
 
       # Fallback to mock data if OAuth not configured or API fails
-      Rails.logger.info "[OpportunityDiscoveryJob] Using mock data (configure OAuth for real data)"
-      SAMPLE_KEYWORDS.map do |keyword|
-        {
-          keyword: keyword,
-          impressions: rand(500..5000),
-          clicks: rand(10..200),
-          position: rand(10..50)
-        }
-      end
     end
 
     def analyze_and_save_opportunity(search_query_data)
-      query = search_query_data["query"]
+      query = search_query_data[:query]
 
       # Step 2A: Get SERP analysis data
       serp_data = fetch_serp_data(query)
-      return unless serp_data
+      return unless serp_data.present?
 
       # Step 2B: Calculate opportunity score
       score_data = build_score_data(search_query_data, serp_data)
@@ -88,27 +72,27 @@ module SeoAiEngine
       return if score < MIN_SCORE_THRESHOLD
 
       # Step 2D: Create or update opportunity
-      save_opportunity(keyword, keyword_data, serp_data, score)
+      save_opportunity(query, search_query_data, serp_data, score)
 
     rescue SerpClient::APIError => e
       Rails.logger.error "[OpportunityDiscoveryJob] SerpAPI error for '#{keyword}': #{e.message}"
       # Continue with next keyword
     end
 
-    def fetch_serp_data(keyword)
+    def fetch_serp_data(query)
       serp_client = SerpClient.new
-      serp_client.analyze_keyword(keyword)
+      serp_client.analyze_keyword(query)
     rescue ArgumentError => e
-      Rails.logger.error "[OpportunityDiscoveryJob] Invalid keyword '#{keyword}': #{e.message}"
+      Rails.logger.error "[OpportunityDiscoveryJob] Invalid query '#{query}': #{e.message}"
       nil
     end
 
     def build_score_data(search_query_data, serp_data)
-      query = search_query_data["query"]
-      search_volume = search_query_data["impressions"] || 0
-      competition_difficulty = serp_data["competition_difficulty"]
+      query = search_query_data[:query]
+      search_volume = search_query_data[:impressions] || 0
+      competition_difficulty = serp_data[:competition_difficulty]
       product_relevance = calculate_product_relevance(query)
-      content_gap_score = calculate_content_gap(serp_data["position"])
+      content_gap_score = calculate_content_gap(search_query_data[:position])
 
       {
         search_volume: search_volume,
@@ -123,11 +107,69 @@ module SeoAiEngine
       scorer.calculate
     end
 
-    def calculate_product_relevance(keyword)
+    def calculate_product_relevance(query)
       # Simple heuristic: check if keyword contains product-related terms
-      # TODO: Make this more sophisticated with actual product catalog matching
-      product_terms = [ "cup", "container", "plate", "straw", "napkin", "packaging", "box" ]
-      relevance = product_terms.any? { |term| keyword.downcase.include?(term) } ? 0.8 : 0.3
+      product_terms = [
+        # Core product types from catalog
+        "cup", "cups",
+        "lid", "lids",
+        "container", "containers",
+        "bowl", "bowls",
+        "box", "boxes",
+        "bag", "bags",
+        "straw", "straws",
+        "napkin", "napkins",
+        "cutlery",
+        "fork", "forks",
+        "knife", "knives",
+        "spoon", "spoons",
+        "stirrer", "stirrers",
+        "tray", "trays",
+        "carrier",
+        # Specific product categories
+        "pizza box",
+        "ice cream cup",
+        "soup container",
+        "food bowl",
+        "coffee cup",
+        "hot cup",
+        "cold cup",
+        "takeaway bag",
+        "carrier tray",
+        "cup carrier",
+        "deli box",
+        # Product attributes & materials
+        "compostable",
+        "recyclable",
+        "biodegradable",
+        "disposable",
+        "eco-friendly",
+        "sustainable",
+        "paper",
+        "kraft",
+        "bamboo",
+        "wooden",
+        "bagasse",
+        "rpet",
+        "pulp",
+        "airlaid",
+        # Cup/container types
+        "double wall",
+        "single wall",
+        "ripple wall",
+        "dome lid",
+        "flat lid",
+        "sip lid",
+        # Use cases
+        "takeaway",
+        "packaging",
+        "food service",
+        "catering",
+        "coffee shop",
+        "restaurant"
+      ]
+
+      relevance = product_terms.any? { |term| query.downcase.include?(term) } ? 0.8 : 0.3
       relevance
     end
 
@@ -147,7 +189,7 @@ module SeoAiEngine
       # Determine opportunity type
       opportunity_type = if opportunity.new_record?
                           "new_content"
-      elsif serp_data["position"] && serp_data["position"] <= 20
+      elsif search_query_data[:position].to_i <= 20
                           "quick_win"
       else
                           "optimize_existing"
@@ -159,10 +201,10 @@ module SeoAiEngine
         competition_difficulty: serp_data[:competition_difficulty],
         score: score,
         opportunity_type: opportunity_type,
-        current_position: keyword_data[:position],
+        current_position: search_query_data[:position],
         metadata: {
-          impressions: keyword_data[:impressions],
-          clicks: keyword_data[:clicks],
+          impressions: search_query_data[:impressions],
+          clicks: search_query_data[:clicks],
           serp_features: serp_data[:related_questions]&.any? ? "paa" : nil
         }.compact,
         discovered_at: opportunity.discovered_at || Time.current,
@@ -170,9 +212,9 @@ module SeoAiEngine
       )
 
       if opportunity.save
-        Rails.logger.info "[OpportunityDiscoveryJob] Saved opportunity: '#{keyword}' (score: #{score})"
+        Rails.logger.info "[OpportunityDiscoveryJob] Saved opportunity: '#{query}' (score: #{score})"
       else
-        Rails.logger.error "[OpportunityDiscoveryJob] Failed to save opportunity '#{keyword}': #{opportunity.errors.full_messages.join(', ')}"
+        Rails.logger.error "[OpportunityDiscoveryJob] Failed to save opportunity '#{query}': #{opportunity.errors.full_messages.join(', ')}"
       end
     end
   end
