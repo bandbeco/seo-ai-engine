@@ -13,7 +13,7 @@ module SeoAiEngine
 
     # Fetches search analytics data from Google Search Console
     def search_analytics(start_date:, end_date:, dimensions: [ "query" ], min_impressions: 10, exclude_branded: true)
-      site_url = "sc-domain:afida.co.uk"
+      site_url = "sc-domain:afida.com"
 
       request = Google::Apis::WebmastersV3::SearchAnalyticsQueryRequest.new(
         start_date: start_date.to_s,
