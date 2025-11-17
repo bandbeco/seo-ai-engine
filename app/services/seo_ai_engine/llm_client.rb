@@ -163,9 +163,9 @@ module SeoAiEngine
       end
 
       def use_mock_mode?
-        # For now, always use mock mode until real API is configured
-        # TODO: Check if RubyLLM has API keys configured
-        true
+        # Use real API if Anthropic key is configured
+        anthropic_key = Rails.application.credentials.dig(:seo_ai_engine, :anthropic_api_key)
+        anthropic_key.blank?
       end
 
       # Prompt builders
