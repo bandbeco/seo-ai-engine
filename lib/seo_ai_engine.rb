@@ -12,26 +12,23 @@ module SeoAiEngine
   end
 
   class Configuration
-    attr_accessor :llm_provider,
-                  :strategist_model,
+    attr_accessor :strategist_model,
                   :writer_model,
                   :reviewer_model,
-                  :anthropic_api_key,
                   :google_service_account,
                   :serpapi_key,
                   :serpapi_daily_limit,
                   :max_drafts_per_week,
-                  :claude_timeout,
+                  :llm_timeout,
                   :max_retries
 
     def initialize
-      @llm_provider = :anthropic
       @strategist_model = "claude-sonnet-4"
       @writer_model = "claude-sonnet-4"
       @reviewer_model = "claude-haiku-4"
       @serpapi_daily_limit = 3
       @max_drafts_per_week = 10
-      @claude_timeout = 120  # seconds
+      @llm_timeout = 120  # seconds
       @max_retries = 3
     end
   end

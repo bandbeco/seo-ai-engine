@@ -23,8 +23,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", ">= 8.1.1"
 
-  # LLM Integration (Anthropic Claude - can wrap with provider-agnostic layer later)
-  spec.add_dependency "anthropic", "~> 1.15"
+  # LLM Integration (RubyLLM - unified API for Anthropic, OpenAI, and more)
+  spec.add_dependency "ruby_llm", "~> 1.9"
 
   # Google Search Console API
   spec.add_dependency "google-apis-webmasters_v3", "~> 0.6"
