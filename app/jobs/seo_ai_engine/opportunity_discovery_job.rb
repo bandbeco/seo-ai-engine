@@ -51,10 +51,12 @@ module SeoAiEngine
           )
         end
       rescue GscClient::AuthenticationError, GscClient::APIError => e
-        Rails.logger.warn "[OpportunityDiscoveryJob] GSC error, falling back to mock data: #{e.message}"
+        Rails.logger.warn "[OpportunityDiscoveryJob] GSC error: #{e.message}"
       end
 
-      # Fallback to mock data if OAuth not configured or API fails
+      # Return empty array if no data available
+      Rails.logger.warn "[OpportunityDiscoveryJob] No GSC data available"
+      []
     end
 
     def analyze_and_save_opportunity(search_query_data)
