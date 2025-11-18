@@ -10,9 +10,57 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_18_210207) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "chats", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "model_id"
+    t.datetime "updated_at", null: false
+    t.index ["model_id"], name: "index_chats_on_model_id"
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.integer "cache_creation_tokens"
+    t.integer "cached_tokens"
+    t.bigint "chat_id", null: false
+    t.text "content"
+    t.json "content_raw"
+    t.datetime "created_at", null: false
+    t.integer "input_tokens"
+    t.bigint "model_id"
+    t.integer "output_tokens"
+    t.string "role", null: false
+    t.bigint "tool_call_id"
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_messages_on_chat_id"
+    t.index ["model_id"], name: "index_messages_on_model_id"
+    t.index ["role"], name: "index_messages_on_role"
+    t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
+  end
+
+  create_table "models", force: :cascade do |t|
+    t.jsonb "capabilities", default: []
+    t.integer "context_window"
+    t.datetime "created_at", null: false
+    t.string "family"
+    t.date "knowledge_cutoff"
+    t.integer "max_output_tokens"
+    t.jsonb "metadata", default: {}
+    t.jsonb "modalities", default: {}
+    t.datetime "model_created_at"
+    t.string "model_id", null: false
+    t.string "name", null: false
+    t.jsonb "pricing", default: {}
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.index ["capabilities"], name: "index_models_on_capabilities", using: :gin
+    t.index ["family"], name: "index_models_on_family"
+    t.index ["modalities"], name: "index_models_on_modalities", using: :gin
+    t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
+    t.index ["provider"], name: "index_models_on_provider"
+  end
 
   create_table "seo_ai_budget_trackings", force: :cascade do |t|
     t.decimal "avg_cost_per_piece", precision: 10, scale: 2
@@ -26,7 +74,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.integer "serpapi_requests", default: 0
     t.decimal "total_cost_gbp", precision: 10, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
-    t.index [ "month" ], name: "index_seo_ai_budget_trackings_on_month", unique: true
+    t.index ["month"], name: "index_seo_ai_budget_trackings_on_month", unique: true
   end
 
   create_table "seo_ai_content_briefs", force: :cascade do |t|
@@ -41,7 +89,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.jsonb "suggested_structure", default: {}
     t.string "target_keyword", null: false
     t.datetime "updated_at", null: false
-    t.index [ "seo_ai_opportunity_id" ], name: "index_seo_ai_content_briefs_on_seo_ai_opportunity_id", unique: true
+    t.index ["seo_ai_opportunity_id"], name: "index_seo_ai_content_briefs_on_seo_ai_opportunity_id", unique: true
   end
 
   create_table "seo_ai_content_drafts", force: :cascade do |t|
@@ -61,8 +109,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.string "target_keywords", default: [], array: true
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.index [ "seo_ai_content_brief_id" ], name: "index_seo_ai_content_drafts_on_seo_ai_content_brief_id", unique: true
-    t.index [ "status", "quality_score" ], name: "index_seo_ai_content_drafts_on_status_and_quality_score"
+    t.index ["seo_ai_content_brief_id"], name: "index_seo_ai_content_drafts_on_seo_ai_content_brief_id", unique: true
+    t.index ["status", "quality_score"], name: "index_seo_ai_content_drafts_on_status_and_quality_score"
   end
 
   create_table "seo_ai_content_items", force: :cascade do |t|
@@ -79,9 +127,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.string "target_keywords", default: [], array: true
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.index [ "published_at" ], name: "index_seo_ai_content_items_on_published_at"
-    t.index [ "seo_ai_content_draft_id" ], name: "index_seo_ai_content_items_on_seo_ai_content_draft_id"
-    t.index [ "slug" ], name: "index_seo_ai_content_items_on_slug", unique: true
+    t.index ["published_at"], name: "index_seo_ai_content_items_on_published_at"
+    t.index ["seo_ai_content_draft_id"], name: "index_seo_ai_content_items_on_seo_ai_content_draft_id"
+    t.index ["slug"], name: "index_seo_ai_content_items_on_slug", unique: true
   end
 
   create_table "seo_ai_opportunities", force: :cascade do |t|
@@ -97,12 +145,12 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.string "status", default: "pending", null: false
     t.string "target_url"
     t.datetime "updated_at", null: false
-    t.index [ "discovered_at" ], name: "index_seo_ai_opportunities_on_discovered_at"
-    t.index [ "keyword" ], name: "index_seo_ai_opportunities_on_keyword", unique: true
-    t.index [ "opportunity_type" ], name: "index_seo_ai_opportunities_on_opportunity_type"
-    t.index [ "score" ], name: "index_seo_ai_opportunities_on_score"
-    t.index [ "status", "score" ], name: "index_seo_ai_opportunities_on_status_and_score"
-    t.index [ "status" ], name: "index_seo_ai_opportunities_on_status"
+    t.index ["discovered_at"], name: "index_seo_ai_opportunities_on_discovered_at"
+    t.index ["keyword"], name: "index_seo_ai_opportunities_on_keyword", unique: true
+    t.index ["opportunity_type"], name: "index_seo_ai_opportunities_on_opportunity_type"
+    t.index ["score"], name: "index_seo_ai_opportunities_on_score"
+    t.index ["status", "score"], name: "index_seo_ai_opportunities_on_status_and_score"
+    t.index ["status"], name: "index_seo_ai_opportunities_on_status"
   end
 
   create_table "seo_ai_performance_snapshots", force: :cascade do |t|
@@ -117,13 +165,30 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_16_160950) do
     t.bigint "seo_ai_content_item_id"
     t.decimal "traffic_value_gbp", precision: 10, scale: 2
     t.datetime "updated_at", null: false
-    t.index [ "period_end" ], name: "index_seo_ai_performance_snapshots_on_period_end"
-    t.index [ "seo_ai_content_item_id", "period_end" ], name: "idx_on_seo_ai_content_item_id_period_end_588cc4adf8"
-    t.index [ "seo_ai_content_item_id" ], name: "index_seo_ai_performance_snapshots_on_seo_ai_content_item_id"
+    t.index ["period_end"], name: "index_seo_ai_performance_snapshots_on_period_end"
+    t.index ["seo_ai_content_item_id", "period_end"], name: "idx_on_seo_ai_content_item_id_period_end_588cc4adf8"
+    t.index ["seo_ai_content_item_id"], name: "index_seo_ai_performance_snapshots_on_seo_ai_content_item_id"
   end
 
+  create_table "tool_calls", force: :cascade do |t|
+    t.jsonb "arguments", default: {}
+    t.datetime "created_at", null: false
+    t.bigint "message_id", null: false
+    t.string "name", null: false
+    t.string "tool_call_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id"], name: "index_tool_calls_on_message_id"
+    t.index ["name"], name: "index_tool_calls_on_name"
+    t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
+  end
+
+  add_foreign_key "chats", "models"
+  add_foreign_key "messages", "chats"
+  add_foreign_key "messages", "models"
+  add_foreign_key "messages", "tool_calls"
   add_foreign_key "seo_ai_content_briefs", "seo_ai_opportunities"
   add_foreign_key "seo_ai_content_drafts", "seo_ai_content_briefs"
   add_foreign_key "seo_ai_content_items", "seo_ai_content_drafts"
   add_foreign_key "seo_ai_performance_snapshots", "seo_ai_content_items"
+  add_foreign_key "tool_calls", "messages"
 end
