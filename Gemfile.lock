@@ -324,6 +324,7 @@ DEPENDENCIES
   propshaft
   puma
   rubocop-rails-omakase
+  ruby_llm (~> 1.9)
   seo_ai_engine!
 
 BUNDLED WITH
