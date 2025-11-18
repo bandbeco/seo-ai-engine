@@ -12,3 +12,6 @@
 .AppleDouble
 .LSOverride
 ._*
+
+# Nested engines directory (shouldn't exist in submodule)
+/engines/
