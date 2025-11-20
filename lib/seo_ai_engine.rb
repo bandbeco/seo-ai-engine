@@ -1,5 +1,6 @@
 require "seo_ai_engine/version"
 require "seo_ai_engine/engine"
+require "ruby_llm"
 
 module SeoAiEngine
   class << self
